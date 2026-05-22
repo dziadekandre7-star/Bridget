@@ -4,6 +4,7 @@ import ollama
 from actions.system_actions import buscar_en_internet, abrir_programa, PROGRAMAS
 from core.memory import cargar_recuerdos, guardar_recuerdo, leer_recuerdos, olvidar_recuerdo, borrar_todos_los_recuerdos
 from core.preferences import cargar_preferencias, guardar_preferencia, obtener_preferencia
+from core.vision import ver_pantalla
 
 ESPERANDO_CONFIRMACION_BORRADO = False
 
@@ -146,6 +147,11 @@ def detectar_intencion(texto):
     
     elif "navegador" in texto:
         return "abrir_navegador"
+
+    elif any(frase in texto for frase in [
+        "mirá la pantalla", "observá la pantalla" "que ves en mi pantalla"
+        ]):
+        return "ver_pantalla"
     
     return "desconocida"
 
@@ -392,5 +398,9 @@ def procesar_comando(texto, assistant_name):
             return f"Perfecto, voy a usar {valor} como {tipo}."
         
         return "No entendí la preferencia."
+
+    elif intencion == "ver_pantalla":
+        descripcion = ver_pantalla()
+        return consultar_llama(f"Estoy viendo esto en mi pantalla: {descripcion}. Ayudame en base a eso.")
 
     return consultar_llama(texto_original)
