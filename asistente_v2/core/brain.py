@@ -323,7 +323,8 @@ def procesar_comando(texto, assistant_name):
             return "Tarea cancelada."
 
     elif intencion == "ejecutar_tarea":
-        palabras = texto_original.lower().split()
+        palabras_ruido = ["por", "favor", "porfa", "please", "porfavor"]
+        palabras = [p for p in texto_original.lower().split() if p not in palabras_ruido]
         programa = palabras[-1]
         ESPERANDO_CONFIRMACION_TAREA = True
         PLAN_PENDIENTE = programa
