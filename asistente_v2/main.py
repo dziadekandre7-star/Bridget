@@ -2,6 +2,7 @@ import datetime
 from core.brain import procesar_comando
 from core.memory import obtener_nombre_preferido
 from core.voice import hablar
+from core.listen import escuchar
 
 ASSISTANT_NAME = "Rick"
 
@@ -24,6 +25,10 @@ def main():
     while True: 
         nombre_usuario = obtener_nombre_preferido() or "André"
         user_input = input(f"{nombre_usuario}: ")
+
+        if user_input.lower().strip() == "escuchame": 
+            user_input = escuchar()
+            print(f"{nombre_usuario} (voz): {user_input}")
 
         if user_input.lower() in ["salir", "exit", "quit", "adiós", "adios"]:
             print(f"{ASSISTANT_NAME}: Nos vemos.")
