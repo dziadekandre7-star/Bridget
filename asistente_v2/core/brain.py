@@ -5,8 +5,11 @@ from actions.system_actions import buscar_en_internet, abrir_programa, PROGRAMAS
 from core.memory import cargar_recuerdos, guardar_recuerdo, leer_recuerdos, olvidar_recuerdo, borrar_todos_los_recuerdos
 from core.preferences import cargar_preferencias, guardar_preferencia, obtener_preferencia
 from core.vision import ver_pantalla
+from actions.agent_actions import planificar_tarea
 
 ESPERANDO_CONFIRMACION_BORRADO = False
+ESPERANDO_CONFIRMACION_TAREA = False 
+PLAN_PENDIENTE = ""
 
 HISTORIAL_CONVERSACION =  []
 
@@ -99,14 +102,16 @@ def extraer_consulta_busqueda(texto, assistant_name):
 def detectar_intencion(texto):
     texto = texto.lower().strip()
 
-    if "abrí" in texto or "abre" in texto or "abrir" in texto:
-        return "abrir"
-
     if es_intencion_busqueda(texto):
         return "buscar_en_internet"
     
     elif texto in ["s", "y", "confirmar borrado"]:
         return "confirmar_borrado"
+    
+    elif any(frase in texto for frase in [
+        "ejecutá", "ejecuta", "hacé", "hace", "abrí", "abri", "mandá", "manda", "escribile", "enviá", "envia", "inicia", "iniciá"
+        ]):
+        return "ejecutar_tarea"
     
     elif ("borra" in texto or "olvida" in texto or "elimina" in texto) and ("todos" in texto or "toda" in texto) and ("recuerdos" in texto or "memoria" in texto):
         return "borrar_todos_los_recuerdos"
@@ -152,6 +157,7 @@ def detectar_intencion(texto):
         "mirá la pantalla", "observá la pantalla" "que ves en mi pantalla"
         ]):
         return "ver_pantalla"
+
     
     return "desconocida"
 
@@ -295,11 +301,35 @@ def consultar_llama(texto):
 def procesar_comando(texto, assistant_name):
 
     global ESPERANDO_CONFIRMACION_BORRADO
+    global ESPERANDO_CONFIRMACION_TAREA
+    global PLAN_PENDIENTE
+
     texto_original = texto 
     texto = normalizar_texto(texto)
     intencion = detectar_intencion(texto)
 
-    if intencion == "borrar_todos_los_recuerdos":
+    if ESPERANDO_CONFIRMACION_TAREA:
+        if texto.strip() in ["si", "sí", "s", "yes", "y"]:
+            ESPERANDO_CONFIRMACION_TAREA = False
+            import subprocess
+            try:
+                subprocess.Popen([PLAN_PENDIENTE])
+                return f"Ejecutando {PLAN_PENDIENTE}..."
+            except:
+                return consultar_llama(f"Ejecutá esta tarea: {PLAN_PENDIENTE}")
+        else:
+            ESPERANDO_CONFIRMACION_TAREA = False
+            PLAN_PENDIENTE = ""
+            return "Tarea cancelada."
+
+    elif intencion == "ejecutar_tarea":
+        palabras = texto_original.lower().split()
+        programa = palabras[-1]
+        ESPERANDO_CONFIRMACION_TAREA = True
+        PLAN_PENDIENTE = programa
+        return f"Voy a abrir {programa}. ¿Confirmás?"
+
+    elif intencion == "borrar_todos_los_recuerdos":
         ESPERANDO_CONFIRMACION_BORRADO = True
         return "¿Estás seguro? Escribí 'confirmar borrado, S/Y' para eleminar toda la memoria de forma permanente."
     
@@ -311,7 +341,7 @@ def procesar_comando(texto, assistant_name):
         else:
             return "No hay ninguna acción de borrado pendiente de confirmación."
 
-    if intencion == "buscar_en_internet":
+    elif intencion == "buscar_en_internet":
         consulta = extraer_consulta_busqueda(texto, assistant_name)
 
         if consulta:
@@ -402,5 +432,6 @@ def procesar_comando(texto, assistant_name):
     elif intencion == "ver_pantalla":
         descripcion = ver_pantalla()
         return consultar_llama(f"Estoy viendo esto en mi pantalla: {descripcion}. Ayudame en base a eso.")
+
 
     return consultar_llama(texto_original)
