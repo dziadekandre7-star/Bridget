@@ -5,13 +5,12 @@ from actions.system_actions import buscar_en_internet, abrir_programa, PROGRAMAS
 from core.memory import cargar_recuerdos, guardar_recuerdo, leer_recuerdos, olvidar_recuerdo, borrar_todos_los_recuerdos
 from core.preferences import cargar_preferencias, guardar_preferencia, obtener_preferencia
 from core.vision import ver_pantalla
-from actions.agent_actions import planificar_tarea
-
-ESPERANDO_CONFIRMACION_BORRADO = False
-ESPERANDO_CONFIRMACION_TAREA = False 
-PLAN_PENDIENTE = ""
+from actions.agent_actions import planificar_tarea, extraer_programa_con_llama, ALIAS_PROGRAMAS
 
 HISTORIAL_CONVERSACION =  []
+ESPERANDO_CONFIRMACION_BORRADO = False
+ESPERANDO_CONFIRMACION_TAREA = False
+PLAN_PENDIENTE = ""
 
 def normalizar_texto(texto):
     texto = texto.lower()
@@ -304,28 +303,43 @@ def procesar_comando(texto, assistant_name):
     global ESPERANDO_CONFIRMACION_TAREA
     global PLAN_PENDIENTE
 
+    
+    print(f"DEBUG - ESPERANDO_TAREA: {ESPERANDO_CONFIRMACION_TAREA} | texto: {texto}")
+
     texto_original = texto 
+
+    if ESPERANDO_CONFIRMACION_TAREA:
+        print(f"DEBUG PLAN: {PLAN_PENDIENTE}")
+        if texto.strip().lower() in ["si", "sí", "s", "yes", "y"]:
+            ESPERANDO_CONFIRMACION_TAREA = False
+            import subprocess
+            import shutil 
+            comando = ALIAS_PROGRAMAS.get(PLAN_PENDIENTE, None)
+            if not comando: 
+                comando = shutil.which(PLAN_PENDIENTE)
+            
+            if not comando: 
+                primera_palabra = PLAN_PENDIENTE.split()[0]
+                comando = shutil.which(primera_palabra)
+                if comando: 
+                    try: 
+                        subprocess.Popen([comando])
+                        return f"Ejecutando {PLAN_PENDIENTE}..."
+                    except Exception as e: 
+                        print(f"DEBUG ERROR: {e}")
+                        return f"No pude abrir {PLAN_PENDIENTE}."
+                else:
+                    return f"No econtré {PLAN_PENDIENTE} en el sistema."
+            else: 
+                ESPERANDO_CONFIRMACION_TAREA = False
+                PLAN_PENDIENTE = ""
+                return "Tarea cancelada."
+
     texto = normalizar_texto(texto)
     intencion = detectar_intencion(texto)
 
-    if ESPERANDO_CONFIRMACION_TAREA:
-        if texto.strip() in ["si", "sí", "s", "yes", "y"]:
-            ESPERANDO_CONFIRMACION_TAREA = False
-            import subprocess
-            try:
-                subprocess.Popen([PLAN_PENDIENTE])
-                return f"Ejecutando {PLAN_PENDIENTE}..."
-            except:
-                return consultar_llama(f"Ejecutá esta tarea: {PLAN_PENDIENTE}")
-        else:
-            ESPERANDO_CONFIRMACION_TAREA = False
-            PLAN_PENDIENTE = ""
-            return "Tarea cancelada."
-
-    elif intencion == "ejecutar_tarea":
-        palabras_ruido = ["por", "favor", "porfa", "please", "porfavor"]
-        palabras = [p for p in texto_original.lower().split() if p not in palabras_ruido]
-        programa = palabras[-1]
+    if intencion == "ejecutar_tarea":
+        programa = extraer_programa_con_llama(texto_original)
         ESPERANDO_CONFIRMACION_TAREA = True
         PLAN_PENDIENTE = programa
         return f"Voy a abrir {programa}. ¿Confirmás?"
