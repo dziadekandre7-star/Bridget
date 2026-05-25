@@ -5,7 +5,7 @@ from actions.system_actions import buscar_en_internet, abrir_programa, PROGRAMAS
 from core.memory import cargar_recuerdos, guardar_recuerdo, leer_recuerdos, olvidar_recuerdo, borrar_todos_los_recuerdos
 from core.preferences import cargar_preferencias, guardar_preferencia, obtener_preferencia
 from core.vision import ver_pantalla
-from actions.agent_actions import planificar_tarea, extraer_programa_con_llama, ALIAS_PROGRAMAS
+from actions.agent_actions import planificar_tarea, extraer_programa_con_llama, ALIAS_PROGRAMAS, buscar_aplicaciones_sistema
 
 HISTORIAL_CONVERSACION =  []
 ESPERANDO_CONFIRMACION_BORRADO = False
@@ -310,7 +310,9 @@ def procesar_comando(texto, assistant_name):
 
     if ESPERANDO_CONFIRMACION_TAREA:
         print(f"DEBUG PLAN: {PLAN_PENDIENTE}")
-        if texto.strip().lower() in ["si", "sí", "s", "yes", "y"]:
+        print(f"DEBUG CONFIRMACION: '{texto.strip().lower()}'")
+        print(f"DEBUG COMPARATION: '{texto_original.strip().lower()}' in lista: {texto_original.strip().lower() in ['si', 'sí', 's', 'yes', 'y']}")
+        if texto_original.strip().lower() in ["si", "sí", "s", "yes", "y"]:
             ESPERANDO_CONFIRMACION_TAREA = False
             import subprocess
             import shutil 
@@ -340,9 +342,22 @@ def procesar_comando(texto, assistant_name):
 
     if intencion == "ejecutar_tarea":
         programa = extraer_programa_con_llama(texto_original)
-        ESPERANDO_CONFIRMACION_TAREA = True
-        PLAN_PENDIENTE = programa
-        return f"Voy a abrir {programa}. ¿Confirmás?"
+        resultados = buscar_aplicaciones_sistema(programa)
+        
+        if len(resultados) == 0:
+            return f"No encontré ninguna aplicación que coincida con '{programa}' en el sistema."
+    
+        elif len(resultados) == 1:
+            nombre, comando = resultados[0]
+            ESPERANDO_CONFIRMACION_TAREA = True
+            PLAN_PENDIENTE = comando
+            return f"Encontré '{nombre}'. ¿Lo abro?"
+    
+        else:
+            opciones = "\n".join([f"- {nombre}" for nombre, comando in resultados])
+            ESPERANDO_CONFIRMACION_TAREA = True
+            PLAN_PENDIENTE = resultados[0][1]
+            return f"Encontré varias opciones:\n{opciones}\n¿Cuál querés abrir?"
 
     elif intencion == "borrar_todos_los_recuerdos":
         ESPERANDO_CONFIRMACION_BORRADO = True

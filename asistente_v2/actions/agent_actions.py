@@ -1,6 +1,8 @@
 import pyautogui
 import time
 import ollama
+import os
+import glob
 from core.vision import capturar_pantalla, ver_pantalla
 
 pyautogui.FAILSAFE = False
@@ -16,6 +18,29 @@ ALIAS_PROGRAMAS = {
     "discord": "discord",
     "terminal": "alacritty",
 }
+
+def buscar_aplicaciones_sistema(termino):
+    termino = termino.lower()
+    resultados = []
+
+    # Buscar en /usr/share/applications/
+    archivos = glob.glob("/usr/share/applications/*.desktop")
+    for archivo in archivos:
+        try: 
+            with open(archivo, "r", encoding="utf-8") as f:
+                contenido = f.read()
+                nombre = "" 
+                comando = "" 
+                for linea in contenido.splitlines():
+                    if linea.startswith("Name="):
+                        nombre = linea.split("=", 1)[1].strip().lower()
+                    if linea.startswith("Exec="):
+                        comando = linea.split("=", 1)[1].strip().split()[0]
+                if termino in nombre and comando:
+                    resultados.append((nombre, comando))
+        except:
+            continue
+    return resultados    
 
 def clickear(x, y):
     pyautogui.click(x, y)
@@ -47,7 +72,7 @@ def extraer_programa_con_llama(texto):
         model="llama3.2",
         messages=[{
             "role": "user",
-            "content": f"Del siguiente texto extraé únicamente el nombre del comando de terminal en linux para abrir el programa mencionado. Solo el comando, sin explicciones. Por ejemplo: 'firefox', 'code', 'baobab', 'spotify'. Texto: '{texto}'"
+            "content": f"Extraé SOLO el nombre de la aplicación mencionada en este texto, una o dos palabras másximo, sin explicaciones, sin comandos, sin comillas. Solo el nombre. Texto: '{texto}'"
         }]
     )
     resultado = respuesta["message"]["content"].strip().lower()
