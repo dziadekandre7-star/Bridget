@@ -1,6 +1,9 @@
 import datetime
 import unicodedata
 import ollama
+import subprocess
+import shutil
+import os
 from actions.system_actions import buscar_en_internet, abrir_programa, PROGRAMAS
 from core.memory import cargar_recuerdos, guardar_recuerdo, leer_recuerdos, olvidar_recuerdo, borrar_todos_los_recuerdos
 from core.preferences import cargar_preferencias, guardar_preferencia, obtener_preferencia
@@ -8,6 +11,7 @@ from core.vision import ver_pantalla
 from actions.agent_actions import planificar_tarea, extraer_programa_con_llama, ALIAS_PROGRAMAS, buscar_aplicaciones_sistema
 
 HISTORIAL_CONVERSACION =  []
+OPCIONES_PENDIENTES = []
 ESPERANDO_CONFIRMACION_BORRADO = False
 ESPERANDO_CONFIRMACION_TAREA = False
 PLAN_PENDIENTE = ""
@@ -302,6 +306,7 @@ def procesar_comando(texto, assistant_name):
     global ESPERANDO_CONFIRMACION_BORRADO
     global ESPERANDO_CONFIRMACION_TAREA
     global PLAN_PENDIENTE
+    global OPCIONES_PENDIENTES
 
     
     print(f"DEBUG - ESPERANDO_TAREA: {ESPERANDO_CONFIRMACION_TAREA} | texto: {texto}")
@@ -309,33 +314,47 @@ def procesar_comando(texto, assistant_name):
     texto_original = texto 
 
     if ESPERANDO_CONFIRMACION_TAREA:
-        print(f"DEBUG PLAN: {PLAN_PENDIENTE}")
-        print(f"DEBUG CONFIRMACION: '{texto.strip().lower()}'")
-        print(f"DEBUG COMPARATION: '{texto_original.strip().lower()}' in lista: {texto_original.strip().lower() in ['si', 'sí', 's', 'yes', 'y']}")
-        if texto_original.strip().lower() in ["si", "sí", "s", "yes", "y"]:
+        print(f"DEBUG ENTRANDO A CONFIRMACION con texto: '{texto_original}'")
+
+        if OPCIONES_PENDIENTES and texto_original.strip().lower() in ["a", "b", "c", "d"]:
+            letras = ["a", "b", "c", "d"]
+            indice = letras.index(texto_original.strip().lower())
+            if indice < len(OPCIONES_PENDIENTES):
+                nombre, comando = OPCIONES_PENDIENTES[indice]
+                ESPERANDO_CONFIRMACION_TAREA = False
+                OPCIONES_PENDIENTES.clear()
+                print (f"DEBUG COMANDO: '{comando}'")
+                print (f"DEBUG ANTES DEL TRY")
+                try:
+                    proc = subprocess.Popen([comando], env=os.environ.copy())
+                    print(f"DDEBUG PID: {proc.pid}")
+                    return f"Ejecutando {nombre}..."
+                except Exception as e:
+                    print(f"DEBUG ERROR: {type(e).__name__}: {e}")
+                    return f"No pude abrir {nombre}."
+
+        if texto_original.strip().lower().replace("í", "i") in ["si", "s", "yes", "y"]:
             ESPERANDO_CONFIRMACION_TAREA = False
-            import subprocess
-            import shutil 
             comando = ALIAS_PROGRAMAS.get(PLAN_PENDIENTE, None)
-            if not comando: 
+            if not comando:
                 comando = shutil.which(PLAN_PENDIENTE)
-            
-            if not comando: 
+            if not comando:
                 primera_palabra = PLAN_PENDIENTE.split()[0]
                 comando = shutil.which(primera_palabra)
-                if comando: 
-                    try: 
-                        subprocess.Popen([comando])
-                        return f"Ejecutando {PLAN_PENDIENTE}..."
-                    except Exception as e: 
-                        print(f"DEBUG ERROR: {e}")
-                        return f"No pude abrir {PLAN_PENDIENTE}."
-                else:
-                    return f"No econtré {PLAN_PENDIENTE} en el sistema."
-            else: 
-                ESPERANDO_CONFIRMACION_TAREA = False
-                PLAN_PENDIENTE = ""
-                return "Tarea cancelada."
+            if comando:
+                try:
+                    subprocess.Popen([comando])
+                    print(f"DEBUG PROCESO: {proc.pid}")
+                    return f"Ejecutando {PLAN_PENDIENTE}..."
+                except Exception as e:
+                    print(f"DEBUG ERROR  KITTY: {type(e).__name__}: {e}")
+                    return f"No pude abrir {nombre}."
+            else:
+                return f"No encontré {PLAN_PENDIENTE} en el sistema."
+        else:
+            ESPERANDO_CONFIRMACION_TAREA = False
+            PLAN_PENDIENTE = ""
+            return "Tarea cancelada."
 
     texto = normalizar_texto(texto)
     intencion = detectar_intencion(texto)
@@ -354,10 +373,13 @@ def procesar_comando(texto, assistant_name):
             return f"Encontré '{nombre}'. ¿Lo abro?"
     
         else:
-            opciones = "\n".join([f"- {nombre}" for nombre, comando in resultados])
+            letras = ["a", "b", "c", "d",]
+            opciones_texto = "\n".join([f"{letras[i]}) {nombre}" for i, (nombre, comando) in enumerate(resultados)])
+            OPCIONES_PENDIENTES = resultados
             ESPERANDO_CONFIRMACION_TAREA = True
-            PLAN_PENDIENTE = resultados[0][1]
-            return f"Encontré varias opciones:\n{opciones}\n¿Cuál querés abrir?"
+            PLAN_PENDIENTE = "" 
+            return f"Encontré varias opciones:\n{opciones_texto}\n¿CUál querés abrir?"
+
 
     elif intencion == "borrar_todos_los_recuerdos":
         ESPERANDO_CONFIRMACION_BORRADO = True
