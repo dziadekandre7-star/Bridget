@@ -47,7 +47,9 @@ def extraer_programa_con_llama(texto):
         model="llama3.2",
         messages=[{
             "role": "user",
-            "content": f"Del siguiente texto extraé únicamente el nombre del programa o aplicación que se quiere abrir, sin ninguna palabra extra. Solo el nombre. Texto: '{texto}'"
+            "content": f"Del siguiente texto extraé únicamente el nombre del comando de terminal en linux para abrir el programa mencionado. Solo el comando, sin explicciones. Por ejemplo: 'firefox', 'code', 'baobab', 'spotify'. Texto: '{texto}'"
         }]
     )
-    return respuesta["message"]["content"].strip().lower()
+    resultado = respuesta["message"]["content"].strip().lower()
+    print (f"DEBUG EXTRACCION: '{resultado}'")
+    return resultado
