@@ -25,6 +25,7 @@ def buscar_aplicaciones_sistema(termino):
 
     # Buscar en /usr/share/applications/
     archivos = glob.glob("/usr/share/applications/*.desktop")
+    print(f"DEBUG: encontrados {len(archivos)} archivos .desktop")
     for archivo in archivos:
         try: 
             with open(archivo, "r", encoding="utf-8") as f:
@@ -32,10 +33,12 @@ def buscar_aplicaciones_sistema(termino):
                 nombre = "" 
                 comando = "" 
                 for linea in contenido.splitlines():
-                    if linea.startswith("Name="):
+                    if linea.startswith("Name=") and not nombre:
                         nombre = linea.split("=", 1)[1].strip().lower()
-                    if linea.startswith("Exec="):
+                    if linea.startswith("Exec=") and not comando:
                         comando = linea.split("=", 1)[1].strip().split()[0]
+                if termino in nombre: 
+                    print(f"DEBUG MATCH: nombre='{nombre}' comando='{comando}'")
                 if termino in nombre and comando:
                     resultados.append((nombre, comando))
         except:

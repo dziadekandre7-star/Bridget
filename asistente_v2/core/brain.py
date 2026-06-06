@@ -15,6 +15,7 @@ OPCIONES_PENDIENTES = []
 ESPERANDO_CONFIRMACION_BORRADO = False
 ESPERANDO_CONFIRMACION_TAREA = False
 PLAN_PENDIENTE = ""
+PLAN_NOMBRE = ""
 
 def normalizar_texto(texto):
     texto = texto.lower()
@@ -307,6 +308,7 @@ def procesar_comando(texto, assistant_name):
     global ESPERANDO_CONFIRMACION_TAREA
     global PLAN_PENDIENTE
     global OPCIONES_PENDIENTES
+    global  PLAN_NOMBRE
 
     
     print(f"DEBUG - ESPERANDO_TAREA: {ESPERANDO_CONFIRMACION_TAREA} | texto: {texto}")
@@ -343,12 +345,11 @@ def procesar_comando(texto, assistant_name):
                 comando = shutil.which(primera_palabra)
             if comando:
                 try:
-                    subprocess.Popen([comando])
-                    print(f"DEBUG PROCESO: {proc.pid}")
-                    return f"Ejecutando {PLAN_PENDIENTE}..."
+                    subprocess.Popen([comando], env=os.environ.copy())
+                    return f"Ejecutando {PLAN_NOMBRE}..."
                 except Exception as e:
                     print(f"DEBUG ERROR  KITTY: {type(e).__name__}: {e}")
-                    return f"No pude abrir {nombre}."
+                    return f"No pude abrir {PLAN_PENDIENTE}."
             else:
                 return f"No encontré {PLAN_PENDIENTE} en el sistema."
         else:
@@ -370,7 +371,8 @@ def procesar_comando(texto, assistant_name):
             nombre, comando = resultados[0]
             ESPERANDO_CONFIRMACION_TAREA = True
             PLAN_PENDIENTE = comando
-            return f"Encontré '{nombre}'. ¿Lo abro?"
+            PLAN_NOMBRE = nombre
+            return f"Encontré '{PLAN_NOMBRE}'. ¿Lo abro?"
     
         else:
             letras = ["a", "b", "c", "d",]
