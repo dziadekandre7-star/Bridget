@@ -293,7 +293,7 @@ def consultar_llama(texto):
     HISTORIAL_CONVERSACION.append({"role": "user", "content": texto})   
 
     respuesta = ollama.chat(
-        model="llama3.2",
+        model="dolphin-mistral",
         messages=[{"role": "system", "content": sistema}] + HISTORIAL_CONVERSACION  
     )
 
