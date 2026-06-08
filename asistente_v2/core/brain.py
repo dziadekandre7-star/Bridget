@@ -499,7 +499,7 @@ def procesar_comando(texto, assistant_name):
     elif intencion == "buscar_web":
         resultados = buscar_web(texto_original)
         contexto = formatear_resultados(resultados)
-        return consultar_llama(f"El usuario preguntó: {texto_original}\n\nEncontré esta información en internet:\n{contexto}\n\nRespondé en base a esa información.")
+        return consultar_llama(f"El usuario preguntó: {texto_original}\n\nEncontré esta información en internet:\n{contexto}\n\nRespondé de forma concisa en 2-3 oraciones basándote en esa información.")
 
 
     return consultar_llama(texto_original)
