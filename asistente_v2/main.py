@@ -1,5 +1,5 @@
 import datetime 
-from core.brain import procesar_comando
+from core.brain import procesar_comando, consultar_llama
 from core.memory import obtener_nombre_preferido
 from core.voice import hablar
 from core.listen import escuchar
@@ -31,6 +31,17 @@ def main():
             print(f"{nombre_usuario} (voz): {user_input}")
 
         if user_input.lower() in ["salir", "exit", "quit", "adiós", "adios"]:
+            print(f"{ASSISTANT_NAME}: Nos vemos.")
+            break
+
+        elif user_input.lower() in ["cerrar", "fin sesion", "fin sesión"]:
+            resumen = consultar_llama("Hacé un resumen breve de los temas importantes que hablamos en esta sesión. Si no hablamos de nada relevante, decilo.")
+            print(f"{ASSISTANT_NAME}: {resumen}")
+            hablar(resumen)
+            confirmacion = input("Querés guardar este resumen en la memoria? (si/no): ")
+            if confirmacion.strip().lower() in ["si", "sí", "s", "yes"]:
+                guardar_recuerdo(resumen)
+                print(f"{ASSISTANT_NAME}: Resumen guardado.")
             print(f"{ASSISTANT_NAME}: Nos vemos.")
             break
 
