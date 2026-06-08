@@ -1,8 +1,11 @@
 from fastapi import FastAPI, HTTPException, Header
 from pydantic import BaseModel
 from core.brain import procesar_comando
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 app = FastAPI()
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 ASSISTANT_NAME = "Rick"
 API_KEY = "kyy007351andy's#key"  # cambiá esto por algo tuyo
@@ -19,4 +22,4 @@ async def chat(mensaje: Mensaje, x_api_key: str = Header(None)):
 
 @app.get("/")
 async def root():
-    return {"status": "Rick está activo"}
+    return FileResponse("static/index.html")
