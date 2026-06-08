@@ -9,6 +9,7 @@ from core.memory import cargar_recuerdos, guardar_recuerdo, leer_recuerdos, olvi
 from core.preferences import cargar_preferencias, guardar_preferencia, obtener_preferencia
 from core.vision import ver_pantalla
 from actions.agent_actions import planificar_tarea, extraer_programa_con_llama, ALIAS_PROGRAMAS, buscar_aplicaciones_sistema
+from core.search import buscar_web, formatear_resultados
 
 HISTORIAL_CONVERSACION =  []
 OPCIONES_PENDIENTES = []
@@ -106,7 +107,12 @@ def extraer_consulta_busqueda(texto, assistant_name):
 def detectar_intencion(texto):
     texto = texto.lower().strip()
 
-    if es_intencion_busqueda(texto):
+    if any(frase in texto for frase in [
+        "busca en internet", "buscá en internet", "busca online", "modo conectado", "busca en la web"
+    ]):
+        return "buscar_web"
+
+    elif es_intencion_busqueda(texto):
         return "buscar_en_internet"
     
     elif texto in ["s", "y", "confirmar borrado"]:
@@ -116,6 +122,7 @@ def detectar_intencion(texto):
         "ejecutá", "ejecuta", "hacé", "hace", "abrí", "abri", "mandá", "manda", "escribile", "enviá", "envia", "inicia", "iniciá"
         ]):
         return "ejecutar_tarea"
+    
     
     elif ("borra" in texto or "olvida" in texto or "elimina" in texto) and ("todos" in texto or "toda" in texto) and ("recuerdos" in texto or "memoria" in texto):
         return "borrar_todos_los_recuerdos"
@@ -161,6 +168,8 @@ def detectar_intencion(texto):
         "mirá la pantalla", "observá la pantalla" "que ves en mi pantalla"
         ]):
         return "ver_pantalla"
+
+    
 
     
     return "desconocida"
@@ -486,6 +495,11 @@ def procesar_comando(texto, assistant_name):
     elif intencion == "ver_pantalla":
         descripcion = ver_pantalla()
         return consultar_llama(f"Estoy viendo esto en mi pantalla: {descripcion}. Ayudame en base a eso.")
+
+    elif intencion == "buscar_web":
+        resultados = buscar_web(texto_original)
+        contexto = formatear_resultados(resultados)
+        return consultar_llama(f"El usuario preguntó: {texto_original}\n\nEncontré esta información en internet:\n{contexto}\n\nRespondé en base a esa información.")
 
 
     return consultar_llama(texto_original)
