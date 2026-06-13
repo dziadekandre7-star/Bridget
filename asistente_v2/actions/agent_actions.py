@@ -7,6 +7,7 @@ from core.vision import capturar_pantalla, ver_pantalla
 
 pyautogui.FAILSAFE = False
 pyautogui.PAUSE = 0.5
+DEBUG_MODE = False
 
 ALIAS_PROGRAMAS = {
     "visual studio code": "code",
@@ -39,7 +40,7 @@ def buscar_aplicaciones_sistema(termino):
                     if linea.startswith("Exec=") and not comando:
                         comando = linea.split("=", 1)[1].strip().split()[0]
                 if termino in nombre: 
-                    if DEBUG MODE:
+                    if DEBUG_MODE:
                         print(f"DEBUG MATCH: nombre='{nombre}' comando='{comando}'")
                 if termino in nombre and comando:
                     resultados.append((nombre, comando))
