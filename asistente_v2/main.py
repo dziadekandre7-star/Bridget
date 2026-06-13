@@ -6,6 +6,14 @@ from core.listen import escuchar
 
 ASSISTANT_NAME = "Rick"
 
+def limpiar_para_tts(texto):
+    import re
+    texto = re.sub(r'\*+', '', texto)  # quita asteriscos
+    texto = re.sub(r'^\d+\.\s', '', texto, flags=re.MULTILINE)  # quita numeración
+    texto = re.sub(r'^[-•]\s', '', texto, flags=re.MULTILINE)  # quita viñetas
+    texto = re.sub(r'`+', '', texto)  # quita comillas de código
+    return texto.strip()
+
 def obtener_saludo(): 
     hora = datetime.datetime.now().hour 
 
@@ -47,7 +55,7 @@ def main():
 
         respuesta = procesar_comando(user_input, ASSISTANT_NAME)   
         print(f"{ASSISTANT_NAME}: {respuesta}") 
-        hablar(respuesta)
+        hablar(limpiar_para_tts(respuesta))
 
 if __name__ == "__main__":
     main()
