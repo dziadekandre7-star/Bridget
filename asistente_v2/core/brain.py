@@ -18,6 +18,7 @@ ESPERANDO_CONFIRMACION_BORRADO = False
 ESPERANDO_CONFIRMACION_TAREA = False
 PLAN_PENDIENTE = ""
 PLAN_NOMBRE = ""
+DEBUG_MODE = False
 
 def normalizar_texto(texto):
     texto = texto.lower()
@@ -375,13 +376,14 @@ def procesar_comando(texto, assistant_name):
     global OPCIONES_PENDIENTES
     global  PLAN_NOMBRE
 
-    
-    print(f"DEBUG - ESPERANDO_TAREA: {ESPERANDO_CONFIRMACION_TAREA} | texto: {texto}")
+    if DEBUG_MODE: 
+        print(f"DEBUG - ESPERANDO_TAREA: {ESPERANDO_CONFIRMACION_TAREA} | texto: {texto}")
 
     texto_original = texto 
 
     if ESPERANDO_CONFIRMACION_TAREA:
-        print(f"DEBUG ENTRANDO A CONFIRMACION con texto: '{texto_original}'")
+        if DEBUG_MODE:
+            print(f"DEBUG ENTRANDO A CONFIRMACION con texto: '{texto_original}'")
 
         if OPCIONES_PENDIENTES and texto_original.strip().lower() in ["a", "b", "c", "d"]:
             letras = ["a", "b", "c", "d"]
@@ -390,14 +392,17 @@ def procesar_comando(texto, assistant_name):
                 nombre, comando = OPCIONES_PENDIENTES[indice]
                 ESPERANDO_CONFIRMACION_TAREA = False
                 OPCIONES_PENDIENTES.clear()
-                print (f"DEBUG COMANDO: '{comando}'")
-                print (f"DEBUG ANTES DEL TRY")
+                if DEBUG_MODE:
+                    print (f"DEBUG COMANDO: '{comando}'")
+                    print (f"DEBUG ANTES DEL TRY")
                 try:
                     proc = subprocess.Popen([comando], env=os.environ.copy())
-                    print(f"DDEBUG PID: {proc.pid}")
+                    if DEBUG_MODE:
+                        print(f"DDEBUG PID: {proc.pid}")
                     return f"Ejecutando {nombre}..."
                 except Exception as e:
-                    print(f"DEBUG ERROR: {type(e).__name__}: {e}")
+                    if DEBUG_MODE:
+                        print(f"DEBUG ERROR: {type(e).__name__}: {e}")
                     return f"No pude abrir {nombre}."
 
         if texto_original.strip().lower().replace("í", "i") in ["si", "s", "yes", "y"]:
@@ -413,7 +418,8 @@ def procesar_comando(texto, assistant_name):
                     subprocess.Popen([comando], env=os.environ.copy())
                     return f"Ejecutando {PLAN_NOMBRE}..."
                 except Exception as e:
-                    print(f"DEBUG ERROR  KITTY: {type(e).__name__}: {e}")
+                    if DEBUG_MODE:
+                        print(f"DEBUG ERROR  KITTY: {type(e).__name__}: {e}")
                     return f"No pude abrir {PLAN_PENDIENTE}."
             else:
                 return f"No encontré {PLAN_PENDIENTE} en el sistema."

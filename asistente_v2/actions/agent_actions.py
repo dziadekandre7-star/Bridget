@@ -25,7 +25,8 @@ def buscar_aplicaciones_sistema(termino):
 
     # Buscar en /usr/share/applications/
     archivos = glob.glob("/usr/share/applications/*.desktop")
-    print(f"DEBUG: encontrados {len(archivos)} archivos .desktop")
+    if DEBUG_MODE: 
+        print(f"DEBUG: encontrados {len(archivos)} archivos .desktop")
     for archivo in archivos:
         try: 
             with open(archivo, "r", encoding="utf-8") as f:
@@ -38,7 +39,8 @@ def buscar_aplicaciones_sistema(termino):
                     if linea.startswith("Exec=") and not comando:
                         comando = linea.split("=", 1)[1].strip().split()[0]
                 if termino in nombre: 
-                    print(f"DEBUG MATCH: nombre='{nombre}' comando='{comando}'")
+                    if DEBUG MODE:
+                        print(f"DEBUG MATCH: nombre='{nombre}' comando='{comando}'")
                 if termino in nombre and comando:
                     resultados.append((nombre, comando))
         except:
@@ -79,5 +81,6 @@ def extraer_programa_con_llama(texto):
         }]
     )
     resultado = respuesta["message"]["content"].strip().lower()
-    print (f"DEBUG EXTRACCION: '{resultado}'")
+    if DEBUG_MODE: 
+        print (f"DEBUG EXTRACCION: '{resultado}'")
     return resultado
