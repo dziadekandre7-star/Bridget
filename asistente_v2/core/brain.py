@@ -193,9 +193,16 @@ def detectar_intencion(texto):
         "solo errores de", "solo seguridad de", "busca errores", "busca vulnerabilidades"
     ]):
         return "analizar_con_filtro"
+    
+    elif any(frase in texto for frase in [
+        "optimizá", "optimiza", "mejorá", "mejora", "refactorizá", "refactoriza", "buscá errores", "busca errores", "encontrá errores", "encontrar errores","corregí", "corrige", "arreglá", "arregla"
+    ]):
+        return "mejorar_codigo"
 
     elif any(indicador in texto for indicador in  ["/home/", "/tmp/", "~/", ".py", ".txt", ".md", ".json"]):
         return "leer_archivo"
+
+
     
     return "desconocida"
 
@@ -511,6 +518,27 @@ def procesar_comando(texto, assistant_name):
 
     elif intencion == "consultar_nombre":
         return f"Me llamo {assistant_name}"
+
+    elif intencion == "mejorar_codigo": 
+        print("DEBUG: entrando a mejorar_codigo")
+        import re 
+        rutas = re.findall(r'[~/][\w/\.\-]+', texto_original)
+        if rutas: 
+            ruta = rutas[0].replace("~", "/home/bridget")
+            contenido = leer_archivo(ruta)
+            if contenido:
+                codigo_mejorado = consultar_llama(f"Reescribí este código Python completo con mejoras. Tu respuesta debe empezar DIRECTAMENTE con 'import' o 'def' o '#'. CERO explicaciones, CERO texto antes o después del código:\n\n{contenido}")
+                print(f"\n--- CÓDIGO MEJORADO ---\n{codigo_mejorado}\n---")
+                confirmacion = input("¿Querés guardar el código mejorado? (si/no): ")
+                if confirmacion.strip().lower() in ["si", "sí", "s", "yes"]:
+                    escribir_archivo(ruta, codigo_mejorado)
+                    return "Código guardado."
+                return "Código no guardado."
+            return f"No pude leer {ruta}."
+        else: 
+            codigo_mejorado = consultar_llama(f"Mejorá este código. Devolvé ÚNICAMENTE el código mejorado:\n\n{texto_original}")
+            print(f"\n--- CÓDIGO MEJORADO ---\n{codigo_mejorado}\n---")
+            return "Revisá el código mejorado arriba."
     
     elif intencion == "guardar_recuerdo":
         recuerdo = extraer_recuerdo(texto) 
@@ -633,6 +661,13 @@ def procesar_comando(texto, assistant_name):
             else: 
                 return f"No pude leer el archivo {ruta}."
         return "No encontré ninguna ruta de archivo en tu mensaje."
+
+def escribir_archivo(ruta, contenido):
+    try: 
+        with open(ruta, "w", encoding="utf-8") as f:
+            f.write(contenido)
+    except Exception as e: 
+        return False
 
 
     return consultar_llama(texto_original)
