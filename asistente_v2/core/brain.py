@@ -432,6 +432,9 @@ def procesar_comando(texto, assistant_name):
     intencion = detectar_intencion(texto)
 
     if intencion == "ejecutar_tarea":
+        verificacion = consultar_llama(f"¿El siguiente mensaje pide explícitamente abir o ejecutar una aplicación o programa? Respondé solo 'sí' o 'no'. Mensaje: '{texto_original}'")
+        if "no" in verificacion.lower():
+            return consultar_llama(texto_original)
         programa = extraer_programa_con_llama(texto_original)
         resultados = buscar_aplicaciones_sistema(programa)
         
