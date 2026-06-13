@@ -193,8 +193,8 @@ def detectar_intencion(texto):
     ]):
         return "analizar_con_filtro"
 
-
-
+    elif any(indicador in texto for indicador in  ["/home/", "/tmp/", "~/", ".py", ".txt", ".md", ".json"]):
+        return "leer_archivo"
     
     return "desconocida"
 
@@ -359,6 +359,13 @@ def consultar_llama(texto):
     HISTORIAL_CONVERSACION.append({"role": "assistant", "content": contenido})  
     
     return contenido
+
+def leer_archivo(ruta):
+    try: 
+        with open(ruta, "r", encoding="utf-8") as f:
+            return f.read()
+    except Exception as e: 
+        return None
 
 def procesar_comando(texto, assistant_name):
 
@@ -603,6 +610,18 @@ def procesar_comando(texto, assistant_name):
             return f"Análisis del proyecto completado. Reporte guardado en: {ruta_reporte}"
         else:
             return f"No encontré archivo o carpeta en: {ruta}"
+    
+    elif intencion == "leer_archivo":
+        import re 
+        rutas = re.findall(r'[~/][\w/\.\-]+', texto_original)
+        if rutas:
+            ruta = rutas[0].replace("~", "/home/bridget")
+            contenido = leer_archivo(ruta)
+            if contenido:
+                return consultar_llama(f"El usuario te pidió: {texto_original}\n\nContenido del archivo:\n{contenido}")
+            else: 
+                return f"No pude leer el archivo {ruta}."
+        return "No encontré ninguna ruta de archivo en tu mensaje."
 
 
     return consultar_llama(texto_original)
