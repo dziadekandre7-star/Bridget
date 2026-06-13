@@ -6,7 +6,7 @@
     <title>RICK</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        
+
         body {
             background: #0a0a0f;
             color: #00ff88;
@@ -64,6 +64,40 @@
             letter-spacing: 3px;
         }
 
+        .rick-audio {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+
+        .rick-audio button {
+            background: none;
+            border: 1px solid #8800ff44;
+            color: #cc88ff;
+            padding: 4px 8px;
+            cursor: pointer;
+            border-radius: 3px;
+            font-size: 11px;
+            transition: all 0.2s;
+        }
+
+        .rick-audio button:hover {
+            border-color: #8800ff;
+            background: #8800ff11;
+        }
+
+        .rick-audio button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .rick-audio button.activo {
+            border-color: #00ff88;
+            color: #00ff88;
+        }
+
         #input-area {
             padding: 15px;
             border-top: 1px solid #00ff8844;
@@ -81,6 +115,10 @@
             font-size: 14px;
             outline: none;
             border-radius: 4px;
+            resize: none;
+            max-height: 100px;
+            min-height: 40px;
+            overflow-y: auto;
         }
 
         #input:focus {
@@ -88,7 +126,7 @@
             box-shadow: 0 0 8px #00ff8844;
         }
 
-        #send {
+        #send, #mic, #attach {
             background: transparent;
             border: 1px solid #00ff88;
             color: #00ff88;
@@ -100,9 +138,21 @@
             transition: all 0.2s;
         }
 
-        #send:hover {
+        #send:hover, #mic:hover, #attach:hover {
             background: #00ff8822;
             box-shadow: 0 0 10px #00ff8844;
+        }
+
+        #mic.grabando {
+            background: #ff0000cc;
+            border-color: #ff0000;
+            color: #ffffff;
+            box-shadow: 0 0 15px #ff0000;
+        }
+
+        #attach.activo {
+            background: #00ff8822;
+            border-color: #00ff88;
         }
 
         .cargando {
@@ -110,31 +160,359 @@
             font-size: 12px;
             letter-spacing: 3px;
         }
+
+        /* Modal */
+        #inbox-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #inbox-modal.abierto {
+            display: flex;
+        }
+
+        #modal-content {
+            background: #0a0a0f;
+            border: 2px solid #00ff88;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 0 20px #00ff8844;
+        }
+
+        #modal-header {
+            padding: 15px;
+            border-bottom: 2px solid #00ff88;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #modal-close {
+            background: none;
+            border: none;
+            color: #00ff88;
+            cursor: pointer;
+            font-size: 20px;
+        }
+
+        #modal-close:hover {
+            color: #ff0000;
+        }
+
+        #modal-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        #drop-zone {
+            padding: 25px;
+            border: 2px dashed #00ff88;
+            border-radius: 4px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 12px;
+            background: #0a001a;
+        }
+
+        #drop-zone:hover {
+            border-color: #00ff88;
+            background: #00ff8811;
+        }
+
+        #drop-zone.dragover {
+            border-color: #00ff88;
+            background: #00ff8822;
+            box-shadow: 0 0 10px #00ff8844;
+        }
+
+        #file-input {
+            display: none;
+        }
+
+        #files-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .file-item {
+            padding: 10px;
+            margin: 5px 0;
+            background: #0a001a;
+            border: 1px solid #8800ff44;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+        }
+
+        .file-item:hover {
+            border-color: #8800ff;
+            background: #0a001a99;
+        }
+
+        .file-item.seleccionado {
+            border-color: #00ff88;
+            background: #001a0a;
+        }
+
+        .file-name {
+            flex: 1;
+            word-break: break-all;
+        }
+
+        .file-delete {
+            background: none;
+            border: none;
+            color: #cc88ff;
+            cursor: pointer;
+            padding: 5px;
+            margin-left: 5px;
+        }
+
+        .file-delete:hover {
+            color: #ff0000;
+        }
+
+        #selected-info {
+            padding: 10px;
+            background: #001a0a;
+            border: 1px solid #00ff8844;
+            border-radius: 4px;
+            font-size: 12px;
+            text-align: center;
+        }
+
+        #selected-info.activo {
+            border-color: #00ff88;
+            color: #00ff88;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            #header {
+                padding: 12px;
+                font-size: 12px;
+            }
+
+            #chat {
+                padding: 15px;
+                gap: 10px;
+            }
+
+            .mensaje {
+                font-size: 13px;
+                padding: 10px 12px;
+                max-width: 90%;
+            }
+
+            #input-area {
+                padding: 12px;
+                gap: 8px;
+            }
+
+            #input {
+                font-size: 14px;
+                padding: 10px;
+            }
+
+            #send, #mic, #attach {
+                padding: 10px 15px;
+                font-size: 12px;
+            }
+
+            #modal-content {
+                width: 95%;
+                max-height: 90vh;
+            }
+
+            #drop-zone {
+                padding: 20px;
+                font-size: 11px;
+            }
+
+            .file-item {
+                font-size: 11px;
+                padding: 8px;
+            }
+
+            #modal-header {
+                padding: 12px;
+            }
+
+            #modal-body {
+                padding: 12px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            #header {
+                padding: 10px;
+                font-size: 11px;
+                letter-spacing: 4px;
+            }
+
+            #chat {
+                padding: 10px;
+                gap: 8px;
+            }
+
+            .mensaje {
+                font-size: 12px;
+                padding: 8px 10px;
+                max-width: 95%;
+            }
+
+            #input-area {
+                padding: 10px;
+                gap: 5px;
+            }
+
+            #input {
+                font-size: 13px;
+                padding: 10px;
+            }
+
+            #send, #mic, #attach {
+                padding: 10px 12px;
+                font-size: 11px;
+                min-width: 40px;
+                min-height: 40px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            #modal-content {
+                width: 95%;
+                max-height: 85vh;
+            }
+
+            #drop-zone {
+                padding: 15px;
+                font-size: 10px;
+                margin: 8px;
+            }
+
+            .file-item {
+                font-size: 10px;
+                padding: 7px;
+                margin: 3px 0;
+            }
+
+            #modal-header {
+                padding: 10px;
+                font-size: 12px;
+            }
+
+            #modal-body {
+                padding: 10px;
+                gap: 10px;
+            }
+
+            #selected-info {
+                font-size: 11px;
+                padding: 8px;
+            }
+        }
     </style>
 </head>
 <body>
     <div id="header">RICK // SISTEMA ACTIVO</div>
-    
+
     <div id="chat"></div>
-    
+
     <div id="input-area">
-        <input id="input" type="text" placeholder=">" autocomplete="off" />
+        <button id="attach">📎</button>
+        <textarea id="input" placeholder=">" autocomplete="off"></textarea>
+        <button id="mic">🎙️</button>
         <button id="send">ENVIAR</button>
     </div>
 
+    <!-- Modal de Inbox -->
+    <div id="inbox-modal">
+        <div id="modal-content">
+            <div id="modal-header">
+                <span>📁 INBOX</span>
+                <button id="modal-close">✕</button>
+            </div>
+            <div id="modal-body">
+                <div id="drop-zone">
+                    📤 Arrastra archivos aquí<br>
+                    <span style="font-size: 10px; color: #00ff8866;">.py .txt .md .json</span>
+                </div>
+                <div id="files-list"></div>
+                <div id="selected-info">Sin archivo seleccionado</div>
+            </div>
+        </div>
+    </div>
+
+    <input id="file-input" type="file" accept=".py,.txt,.md,.json" multiple>
+
     <script>
         const API_URL = "https://cling-immodest-case.ngrok-free.dev/chat";
+        const API_AUDIO_URL = "https://cling-immodest-case.ngrok-free.dev/audio";
+        const API_UPLOAD_URL = "https://cling-immodest-case.ngrok-free.dev/upload";
+        const API_INBOX_URL = "https://cling-immodest-case.ngrok-free.dev/inbox";
+        const API_DELETE_URL = "https://cling-immodest-case.ngrok-free.dev/inbox";
+        const API_CHAT_ARCHIVO_URL = "https://cling-immodest-case.ngrok-free.dev/chat-archivo";
+        const API_SPEAK_URL = "https://cling-immodest-case.ngrok-free.dev/speak";
         const API_KEY = "kyy007351andy's#key";
-        
+
         const chat = document.getElementById("chat");
         const input = document.getElementById("input");
         const send = document.getElementById("send");
+        const mic = document.getElementById("mic");
+        const attach = document.getElementById("attach");
+        const inboxModal = document.getElementById("inbox-modal");
+        const modalClose = document.getElementById("modal-close");
+        const dropZone = document.getElementById("drop-zone");
+        const fileInput = document.getElementById("file-input");
+        const filesList = document.getElementById("files-list");
+        const selectedInfo = document.getElementById("selected-info");
+
+        let grabando = false;
+        let mediaRecorder;
+        let audioChunks = [];
+        let audioContext;
+        let stream;
+        let archivoSeleccionado = null;
 
         function agregarMensaje(texto, tipo) {
             const div = document.createElement("div");
             div.className = `mensaje ${tipo}`;
             if (tipo === "rick") {
-                div.innerHTML = `<div class="nombre">RICK //</div>${texto}`;
+                div.innerHTML = `<div class="nombre">RICK //</div><div>${texto}</div>`;
+
+                // Agregar contenedor para controles de voz
+                const audioDiv = document.createElement("div");
+                audioDiv.className = "rick-audio";
+                div.appendChild(audioDiv);
+
+                // Crear botón para iniciar reproducción
+                const btnVoz = document.createElement("button");
+                btnVoz.textContent = "🔊 ESCUCHAR";
+                btnVoz.addEventListener("click", () => reproducirRespuesta(texto, audioDiv));
+                audioDiv.appendChild(btnVoz);
             } else {
                 div.textContent = texto;
             }
@@ -142,10 +520,192 @@
             chat.scrollTop = chat.scrollHeight;
         }
 
+        async function reproducirRespuesta(texto, audioContainer) {
+            try {
+                // Buscar botón existente o crearlo
+                let btn = audioContainer.querySelector("button");
+                let audioState = audioContainer.dataset.audioState || "none";
+
+                if (!btn) {
+                    btn = document.createElement("button");
+                    btn.textContent = "⏳ GENERANDO...";
+                    btn.disabled = true;
+                    audioContainer.appendChild(btn);
+                    audioContainer.dataset.audioState = "generating";
+
+                    const res = await fetch(API_SPEAK_URL, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "x-api-key": API_KEY
+                        },
+                        body: JSON.stringify({ texto })
+                    });
+
+                    if (!res.ok) {
+                        throw new Error("Error generando audio");
+                    }
+
+                    const audioBlob = await res.blob();
+                    const audioUrl = URL.createObjectURL(audioBlob);
+                    const audio = new Audio(audioUrl);
+                    audioContainer.dataset.audio = audioUrl;
+                    audioContainer.audio = audio;
+
+                    btn.disabled = false;
+                    btn.textContent = "🔊 ESCUCHAR";
+                    audioContainer.dataset.audioState = "ready";
+
+                    let pauseTimeout = null;
+
+                    btn.onclick = (e) => {
+                        e.stopPropagation();
+                        const currentState = audioContainer.dataset.audioState;
+
+                        if (currentState === "playing") {
+                            // Pause
+                            audio.pause();
+                            btn.textContent = "⏸️ PAUSADO";
+                            audioContainer.dataset.audioState = "paused";
+
+                            // Auto-stop después de 15s
+                            pauseTimeout = setTimeout(() => {
+                                audio.pause();
+                                audio.currentTime = 0;
+                                btn.textContent = "🔊 ESCUCHAR";
+                                btn.classList.remove("activo");
+                                audioContainer.dataset.audioState = "ready";
+                            }, 15000);
+
+                        } else if (currentState === "paused") {
+                            // Resume
+                            if (pauseTimeout) {
+                                clearTimeout(pauseTimeout);
+                                pauseTimeout = null;
+                            }
+                            audio.play();
+                            btn.textContent = "⏸️ REPRODUCIENDO";
+                            btn.classList.add("activo");
+                            audioContainer.dataset.audioState = "playing";
+
+                        } else if (currentState === "ready") {
+                            // Play
+                            audio.play();
+                            btn.textContent = "⏸️ REPRODUCIENDO";
+                            btn.classList.add("activo");
+                            audioContainer.dataset.audioState = "playing";
+                        }
+                    };
+
+                    audio.onended = () => {
+                        btn.textContent = "🔊 ESCUCHAR";
+                        btn.classList.remove("activo");
+                        audioContainer.dataset.audioState = "ready";
+                        if (pauseTimeout) clearTimeout(pauseTimeout);
+                    };
+
+                    audio.onerror = () => {
+                        btn.textContent = "🔊 ERROR";
+                        btn.disabled = true;
+                    };
+                }
+
+            } catch (e) {
+                console.error("Error:", e);
+            }
+        }
+
+        // ============ MODAL ============
+        attach.addEventListener("click", () => {
+            inboxModal.classList.add("abierto");
+            cargarArchivos();
+        });
+
+        modalClose.addEventListener("click", () => {
+            inboxModal.classList.remove("abierto");
+        });
+
+        inboxModal.addEventListener("click", (e) => {
+            if (e.target === inboxModal) {
+                inboxModal.classList.remove("abierto");
+            }
+        });
+
+        // ============ AUDIO ============
+        async function iniciarGrabacion() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+
+                mediaRecorder.ondataavailable = (event) => {
+                    audioChunks.push(event.data);
+                };
+
+                mediaRecorder.onstop = async () => {
+                    const audioBlob = new Blob(audioChunks, { type: "audio/wav" });
+                    await enviarAudio(audioBlob);
+                };
+
+                mediaRecorder.start();
+                grabando = true;
+                mic.classList.add("grabando");
+                mic.textContent = "⏹️";
+            } catch (e) {
+                agregarMensaje("Error al acceder al micrófono.", "rick");
+            }
+        }
+
+        function detenerGrabacion() {
+            if (mediaRecorder && grabando) {
+                mediaRecorder.stop();
+                grabando = false;
+                mic.classList.remove("grabando");
+                mic.textContent = "🎙️";
+                stream.getTracks().forEach(track => track.stop());
+            }
+        }
+
+        async function enviarAudio(audioBlob) {
+            const cargando = document.createElement("div");
+            cargando.className = "mensaje rick cargando";
+            cargando.textContent = "transcribiendo...";
+            chat.appendChild(cargando);
+
+            try {
+                const formData = new FormData();
+                formData.append("file", audioBlob, "audio.wav");
+
+                const res = await fetch(API_AUDIO_URL, {
+                    method: "POST",
+                    headers: {
+                        "x-api-key": API_KEY
+                    },
+                    body: formData
+                });
+                const data = await res.json();
+                chat.removeChild(cargando);
+
+                if (data.error) {
+                    agregarMensaje(`Error: ${data.error}`, "rick");
+                } else {
+                    input.value = data.texto_transcrito;
+                    input.focus();
+                }
+            } catch (e) {
+                if (chat.contains(cargando)) {
+                    chat.removeChild(cargando);
+                }
+                agregarMensaje("Error de conexión.", "rick");
+            }
+        }
+
+        // ============ CHAT ============
         async function enviar() {
             const texto = input.value.trim();
             if (!texto) return;
-            
+
             agregarMensaje(texto, "usuario");
             input.value = "";
 
@@ -155,13 +715,21 @@
             chat.appendChild(cargando);
 
             try {
-                const res = await fetch(API_URL, {
+                let url = API_URL;
+                let body = { texto };
+
+                // Si hay archivo seleccionado, usar endpoint de chat-archivo
+                if (archivoSeleccionado) {
+                    url = API_CHAT_ARCHIVO_URL + "?nombre=" + encodeURIComponent(archivoSeleccionado);
+                }
+
+                const res = await fetch(url, {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
                         "x-api-key": API_KEY
                     },
-                    body: JSON.stringify({ texto })
+                    body: JSON.stringify(body)
                 });
                 const data = await res.json();
                 chat.removeChild(cargando);
@@ -172,9 +740,155 @@
             }
         }
 
+        // ============ INBOX ============
+        async function cargarArchivos() {
+            try {
+                const res = await fetch(API_INBOX_URL, {
+                    headers: {
+                        "x-api-key": API_KEY
+                    }
+                });
+                const data = await res.json();
+                mostrarArchivos(data.archivos);
+            } catch (e) {
+                console.error("Error cargando archivos:", e);
+            }
+        }
+
+        function mostrarArchivos(archivos) {
+            filesList.innerHTML = "";
+
+            if (archivos.length === 0) {
+                filesList.innerHTML = '<div style="color: #00ff8866; font-size: 11px; text-align: center; padding: 20px;">Sin archivos subidos</div>';
+                return;
+            }
+
+            archivos.forEach(archivo => {
+                const div = document.createElement("div");
+                div.className = "file-item";
+                if (archivoSeleccionado === archivo.nombre) {
+                    div.classList.add("seleccionado");
+                }
+
+                div.innerHTML = `
+                    <span class="file-name">${archivo.nombre}</span>
+                    <button class="file-delete">✕</button>
+                `;
+
+                div.querySelector(".file-delete").addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    eliminarArchivo(archivo.nombre);
+                });
+
+                div.addEventListener("click", () => {
+                    document.querySelectorAll(".file-item").forEach(f => f.classList.remove("seleccionado"));
+                    div.classList.add("seleccionado");
+                    archivoSeleccionado = archivo.nombre;
+                    attach.classList.add("activo");
+                    selectedInfo.textContent = `✓ ${archivo.nombre} seleccionado`;
+                    selectedInfo.classList.add("activo");
+                });
+
+                filesList.appendChild(div);
+            });
+        }
+
+        async function subirArchivo(file) {
+            const formData = new FormData();
+            formData.append("file", file);
+
+            try {
+                const res = await fetch(API_UPLOAD_URL, {
+                    method: "POST",
+                    headers: {
+                        "x-api-key": API_KEY
+                    },
+                    body: formData
+                });
+
+                if (res.ok) {
+                    cargarArchivos();
+                } else {
+                    const data = await res.json();
+                    agregarMensaje(`Error: ${data.detail}`, "rick");
+                }
+            } catch (e) {
+                agregarMensaje("Error al subir archivo.", "rick");
+            }
+        }
+
+        async function eliminarArchivo(nombre) {
+            try {
+                const res = await fetch(API_DELETE_URL + "/" + encodeURIComponent(nombre), {
+                    method: "DELETE",
+                    headers: {
+                        "x-api-key": API_KEY
+                    }
+                });
+
+                if (res.ok) {
+                    if (archivoSeleccionado === nombre) {
+                        archivoSeleccionado = null;
+                        attach.classList.remove("activo");
+                        selectedInfo.textContent = "Sin archivo seleccionado";
+                        selectedInfo.classList.remove("activo");
+                    }
+                    cargarArchivos();
+                }
+            } catch (e) {
+                console.error("Error eliminando archivo:", e);
+            }
+        }
+
+        // ============ EVENT LISTENERS ============
         send.addEventListener("click", enviar);
         input.addEventListener("keypress", e => {
-            if (e.key === "Enter") enviar();
+            if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                enviar();
+            }
+        });
+
+        // Auto-ajustar altura del textarea
+        input.addEventListener("input", () => {
+            input.style.height = "auto";
+            input.style.height = Math.min(input.scrollHeight, 100) + "px";
+        });
+
+        mic.addEventListener("mousedown", iniciarGrabacion);
+        mic.addEventListener("mouseup", detenerGrabacion);
+        mic.addEventListener("mouseleave", detenerGrabacion);
+
+        mic.addEventListener("touchstart", iniciarGrabacion);
+        mic.addEventListener("touchend", detenerGrabacion);
+
+        dropZone.addEventListener("click", () => fileInput.click());
+
+        dropZone.addEventListener("dragover", (e) => {
+            e.preventDefault();
+            dropZone.classList.add("dragover");
+        });
+
+        dropZone.addEventListener("dragleave", () => {
+            dropZone.classList.remove("dragover");
+        });
+
+        dropZone.addEventListener("drop", (e) => {
+            e.preventDefault();
+            dropZone.classList.remove("dragover");
+
+            const files = e.dataTransfer.files;
+            for (let file of files) {
+                subirArchivo(file);
+            }
+        });
+
+        fileInput.addEventListener("change", (e) => {
+            const files = e.target.files;
+            for (let file of files) {
+                subirArchivo(file);
+            }
+            fileInput.value = "";
         });
     </script>
 </body>

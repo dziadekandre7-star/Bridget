@@ -1,6 +1,6 @@
 import datetime 
 from core.brain import procesar_comando, consultar_llama
-from core.memory import obtener_nombre_preferido
+from core.memory import obtener_nombre_preferido, guardar_recuerdo
 from core.voice import hablar
 from core.listen import escuchar
 

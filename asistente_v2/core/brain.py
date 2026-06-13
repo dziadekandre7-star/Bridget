@@ -10,6 +10,7 @@ from core.preferences import cargar_preferencias, guardar_preferencia, obtener_p
 from core.vision import ver_pantalla
 from actions.agent_actions import planificar_tarea, extraer_programa_con_llama, ALIAS_PROGRAMAS, buscar_aplicaciones_sistema
 from core.search import buscar_web, formatear_resultados
+from core.code_analyzer import analizar_archivo, analizar_proyecto, guardar_reporte
 
 HISTORIAL_CONVERSACION =  []
 OPCIONES_PENDIENTES = []
@@ -122,6 +123,11 @@ def detectar_intencion(texto):
         "ejecutá", "ejecuta", "hacé", "hace", "abrí", "abri", "mandá", "manda", "escribile", "enviá", "envia", "inicia", "iniciá"
         ]):
         return "ejecutar_tarea"
+
+  #  elif any(frase in texto for frase in [
+  #     "analizá", "analiza", "analizame", "revisá", "revisa", "buscá bugs", "busca bugs"
+  #  ]):
+  #      return "analizar_codigo"
     
     
     elif ("borra" in texto or "olvida" in texto or "elimina" in texto) and ("todos" in texto or "toda" in texto) and ("recuerdos" in texto or "memoria" in texto):
@@ -169,7 +175,25 @@ def detectar_intencion(texto):
         ]):
         return "ver_pantalla"
 
-    
+    elif any(frase in texto for frase in [
+        "analiza mi proyecto", "analiza el proyecto", "analizá mi proyecto",
+        "analiza /", "analizá /", "revisa el proyecto"
+    ]):
+        return "analizar_proyecto"
+
+    elif any(frase in texto for frase in [
+        "analiza el archivo", "analiza el archivo", "analizá el archivo",
+        "analiza /", "analizá /", "revisa el archivo"
+    ]):
+        return "analizar_archivo"
+
+    elif any(frase in texto for frase in [
+        "solo errores", "solo seguridad", "solo optimizacion", "solo calidad",
+        "solo errores de", "solo seguridad de", "busca errores", "busca vulnerabilidades"
+    ]):
+        return "analizar_con_filtro"
+
+
 
     
     return "desconocida"
@@ -277,8 +301,33 @@ def normalizar_nombre_programa(objeto):
 
     if objeto in alias_programas:
         return alias_programas[objeto]
-    
+
     return objeto
+
+def extraer_ruta_archivo(texto):
+    """Extrae la ruta de un archivo del comando."""
+    import re
+    patron = r'(/[a-zA-Z0-9_\-./~]+\.py|/[a-zA-Z0-9_\-./~]+)'
+    coincidencias = re.findall(patron, texto)
+    if coincidencias:
+        return coincidencias[0].strip()
+    return None
+
+def extraer_tipo_analisis(texto):
+    """Extrae el tipo de análisis si se menciona específicamente."""
+    texto_lower = texto.lower()
+
+    if "solo errores" in texto_lower or "solo bugs" in texto_lower:
+        return "errores"
+    elif "solo seguridad" in texto_lower or "vulnerabilidades" in texto_lower:
+        return "seguridad"
+    elif "solo optimizacion" in texto_lower or "solo performance" in texto_lower:
+        return "optimizacion"
+    elif "solo calidad" in texto_lower or "solo estilo" in texto_lower:
+        return "calidad"
+
+    return "completo"
+
 
 def consultar_llama(texto):
     global HISTORIAL_CONVERSACION
@@ -500,6 +549,60 @@ def procesar_comando(texto, assistant_name):
         resultados = buscar_web(texto_original)
         contexto = formatear_resultados(resultados)
         return consultar_llama(f"El usuario preguntó: {texto_original}\n\nEncontré esta información en internet:\n{contexto}\n\nRespondé de forma concisa en 2-3 oraciones basándote en esa información.")
+
+    elif intencion == "analizar_archivo":
+        ruta = extraer_ruta_archivo(texto_original)
+        tipo_analisis = extraer_tipo_analisis(texto_original)
+
+        if not ruta:
+            return "Necesito que me indiques la ruta del archivo. Ejemplo: 'analiza /ruta/del/archivo.py'"
+
+        if not os.path.exists(ruta):
+            return f"No encontré el archivo en: {ruta}"
+
+        resultado = analizar_archivo(ruta, tipo_analisis)
+
+        if not resultado:
+            return f"No pude analizar el archivo: {ruta}"
+
+        ruta_reporte = guardar_reporte(resultado, formato="markdown", tipo="archivo")
+        return f"Análisis completado. Reporte guardado en: {ruta_reporte}\n\n{resultado['analisis']}"
+
+    elif intencion == "analizar_proyecto":
+        ruta = extraer_ruta_archivo(texto_original)
+        tipo_analisis = extraer_tipo_analisis(texto_original)
+
+        if not ruta:
+            return "Necesito que me indiques la ruta del proyecto. Ejemplo: 'analiza mi proyecto /ruta/del/proyecto'"
+
+        if not os.path.isdir(ruta):
+            return f"No encontré la carpeta en: {ruta}"
+
+        resultado = analizar_proyecto(ruta, tipo_analisis)
+
+        if not resultado:
+            return f"No encontré archivos Python en: {ruta}"
+
+        ruta_reporte = guardar_reporte(resultado, formato="markdown", tipo="proyecto")
+        return f"Análisis del proyecto completado. Reporte guardado en: {ruta_reporte}\nArchivos analizados: {resultado['archivos_analizados']}"
+
+    elif intencion == "analizar_con_filtro":
+        ruta = extraer_ruta_archivo(texto_original)
+        tipo_analisis = extraer_tipo_analisis(texto_original)
+
+        if not ruta:
+            return "Necesito que me indiques el archivo o proyecto. Ejemplo: 'solo errores de /ruta/archivo.py'"
+
+        if os.path.isfile(ruta):
+            resultado = analizar_archivo(ruta, tipo_analisis)
+            ruta_reporte = guardar_reporte(resultado, formato="markdown", tipo="archivo")
+            return f"Análisis de {tipo_analisis} completado.\nReporte: {ruta_reporte}\n\n{resultado['analisis']}"
+        elif os.path.isdir(ruta):
+            resultado = analizar_proyecto(ruta, tipo_analisis)
+            ruta_reporte = guardar_reporte(resultado, formato="markdown", tipo="proyecto")
+            return f"Análisis del proyecto completado. Reporte guardado en: {ruta_reporte}"
+        else:
+            return f"No encontré archivo o carpeta en: {ruta}"
 
 
     return consultar_llama(texto_original)
