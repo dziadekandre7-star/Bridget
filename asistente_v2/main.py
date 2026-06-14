@@ -54,11 +54,13 @@ def main():
             break
 
         respuesta = procesar_comando(user_input, ASSISTANT_NAME)   
+        if respuesta is None:
+            respuesta = "No pude generar una respuesta."
         print(f"{ASSISTANT_NAME}: {respuesta}") 
         if "```" in respuesta:
             hablar("Revisá el código en pantalla.")
         else:
             hablar(limpiar_para_tts(respuesta))  
-            
+
 if __name__ == "__main__":
     main()

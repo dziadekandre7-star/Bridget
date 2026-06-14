@@ -339,6 +339,15 @@ def extraer_tipo_analisis(texto):
 
 def consultar_llama(texto):
     global HISTORIAL_CONVERSACION
+    contexto_proyecto = "" 
+    ruta_contexto = os.path.join(os.path.dirname(__file__), "..", "context.md")
+    try: 
+        with open(ruta_contexto, "r", encoding="utf-8") as f: 
+            contexto_proyecto = f.read()
+    except: 
+        pass
+    if DEBUG_MODE:
+        print(f"DEBUG CONTEXTO: {contexto_proyecto[:100]if contexto_proyecto else 'VACÍO'}")
     recuerdos = leer_recuerdos()
     contexto_memoria = "; ".join(recuerdos) if recuerdos else ""
 
@@ -357,6 +366,8 @@ def consultar_llama(texto):
         "Tus respuestas no deben superar los 3 párrafos. Si el tema lo permite, respondé en 1 o 2 párrafos. Preferí la concisión sobre la exhaustividad."
         f"Lo que sabés sobre el usuario: {contexto_memoria}" if contexto_memoria else ""
     )
+    if contexto_proyecto: 
+        sistema += f"\n\nContexto de tu arquitectura y proyecto: \n{contexto_proyecto}"
 
     HISTORIAL_CONVERSACION.append({"role": "user", "content": texto})   
 
@@ -520,7 +531,8 @@ def procesar_comando(texto, assistant_name):
         return f"Me llamo {assistant_name}"
 
     elif intencion == "mejorar_codigo": 
-        print("DEBUG: entrando a mejorar_codigo")
+        if DEBUG_MODE:
+            print("DEBUG: entrando a mejorar_codigo")
         import re 
         rutas = re.findall(r'[~/][\w/\.\-]+', texto_original)
         if rutas: 
@@ -661,6 +673,11 @@ def procesar_comando(texto, assistant_name):
             else: 
                 return f"No pude leer el archivo {ruta}."
         return "No encontré ninguna ruta de archivo en tu mensaje."
+    respuesta = consultar_llama(texto_original)
+    if respuesta: 
+        return respuesta
+
+    return "no pude generar una respuesta"
 
 def escribir_archivo(ruta, contenido):
     try: 
